@@ -17,7 +17,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'epm=epm:main',
+            'epm=epm.epm:main',
         ],
     },
 )

@@ -2,6 +2,7 @@
 from __future__ import print_function
 import argparse
 import os
+import sys
 import re
 import subprocess
 import shlex
@@ -14,9 +15,8 @@ from .util import git_version, find_manifest_file
 from .constants import MANIFEST_FILE, LOCK_FILE
 
 #pylint: disable=broad-except
-def main(args):
+def main():
     """Main function"""
-
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
     parser_new = subparsers.add_parser('new', help='Create a new project')
@@ -35,30 +35,31 @@ def main(args):
                                           help='Update dependencies in {}'.format(LOCK_FILE))
     parser_update.add_argument('--verbose')
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(sys.argv[1:])
 
     if args.command == 'new':
         try:
             new(args.path)
         except Exception as why:
-            print('Failed to create new project: {}'.format(why))
+            print('Error: {}'.format(why))
     elif args.command == 'build':
         try:
             build()
         except Exception as why:
-            print('Failed to build project: {}'.format(why))
+            print('Error: {}'.format(why))
     elif args.command == 'clean':
         try:
             clean()
         except Exception as why:
-            print('Failed to build project: {}'.format(why))
+            print('Error: {}'.format(why))
     elif args.command == 'init':
         try:
             init(os.getcwd())
         except Exception as why:
-            print('Failed to initialize project: {}'.format(why))
+            print('Error: {}'.format(why))
     else:
         print("Command not implemented")
+        return 1
 
     return 0
 
@@ -125,7 +126,7 @@ def build():
         projectdir = os.path.dirname(manifestfile)
         subprocess.call('cd {}; make'.format(projectdir), shell=True)
     else:
-        raise Exception('Could not find {} file'.format(MANIFEST_FILE))
+        raise Exception('Could not find {}'.format(MANIFEST_FILE))
 
 def clean():
     """Clean up project"""
@@ -134,4 +135,4 @@ def clean():
         projectdir = os.path.dirname(manifestfile)
         subprocess.call('cd {}; make clean'.format(projectdir), shell=True)
     else:
-        raise Exception('Could not find {} file'.format(MANIFEST_FILE))
+        raise Exception('Could not find {}'.format(MANIFEST_FILE))
