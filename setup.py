@@ -12,6 +12,9 @@ setup(
     author_email='nicke.claesson@gmail.com',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    package_data={
+        'resources/templates': ['*']
+    },
     entry_points={
         'console_scripts': [
             'epm=epm:main',
