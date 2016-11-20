@@ -105,8 +105,11 @@ def init(path, ioc):
     name = getpass.getuser()
     email = '{}@{}'.format(name, "localhost")
     if git_version():
-        name = subprocess.check_output(shlex.split('git config user.name')).decode('utf-8').strip()
-        email = subprocess.check_output(shlex.split('git config user.email')).decode('utf-8').strip()
+        try:
+            name = subprocess.check_output(shlex.split('git config user.name')).decode('utf-8').strip()
+            email = subprocess.check_output(shlex.split('git config user.email')).decode('utf-8').strip()
+        except subprocess.CalledProcessError:
+            raise Exception('Git is installed but not configured, username or email missing')
     with open(os.path.join(path, MANIFEST_FILE), 'wb') as manifestfile:
         manifestfile.write(Template(epm_template).substitute(
             name=os.path.basename(path),
