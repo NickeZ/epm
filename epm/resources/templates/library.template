@@ -1,0 +1,3 @@
+record(stringin, $name) {
+    field(DESC, "Sample record")
+}

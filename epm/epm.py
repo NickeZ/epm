@@ -19,27 +19,35 @@ def main():
     """Main function"""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
-    parser_new = subparsers.add_parser('new', help='Create a new project')
-    parser_new.add_argument('path')
-    parser_new.add_argument('--ioc')
-    parser_init = subparsers.add_parser('init',
-                                        help='Create a new project in an existing direectory')
-    parser_init.add_argument('--ioc')
-    parser_build = subparsers.add_parser('build', help='Compile project')
-    parser_build.add_argument('--target')
-    parser_run = subparsers.add_parser('run', help='Run project')
-    parser_run.add_argument('--target')
-    parser_clean = subparsers.add_parser('clean', help='Delete compiled files')
-    parser_clean.add_argument('--target')
-    parser_update = subparsers.add_parser('update',
-                                          help='Update dependencies in {}'.format(LOCK_FILE))
-    parser_update.add_argument('--verbose')
+    p_new = subparsers.add_parser('new', help='Create a new project')
+    p_new.add_argument('path')
+    p_new.add_argument('--ioc', action='store_true')
+    p_init = subparsers.add_parser('init',
+                                   help='Create a new project in an existing direectory')
+    p_init.add_argument('--ioc', action='store_true')
+    p_build = subparsers.add_parser('build', help='Compile project')
+    p_build.add_argument('--target')
+    p_run = subparsers.add_parser('run', help='Run project')
+    p_run.add_argument('--target')
+    p_clean = subparsers.add_parser('clean', help='Delete compiled files')
+    p_clean.add_argument('--target')
+    p_update = subparsers.add_parser('update',
+                                     help='Update dependencies in {}'.format(LOCK_FILE))
+    p_update.add_argument('--verbose')
+    p_install = subparsers.add_parser('install', help='Install module')
+    p_install.add_argument('module', nargs='*',
+                           help='Module to install')
+    p_toolchain = subparsers.add_parser('toolchain', help='Administrate toolchains')
+    p_t_sub = p_toolchain.add_subparsers(title='commands', dest='toolchain_command')
+    p_t_list = p_t_sub.add_parser('list', help='List available toolchains')
+    p_t_list.add_argument('placeholder', nargs='*',
+                          help='Module to install')
 
     args = parser.parse_args(sys.argv[1:])
 
     if args.command == 'new':
         try:
-            new(args.path)
+            new(args.path, args.ioc)
         except Exception as why:
             print('Error: {}'.format(why))
     elif args.command == 'build':
@@ -54,9 +62,12 @@ def main():
             print('Error: {}'.format(why))
     elif args.command == 'init':
         try:
-            init(os.getcwd())
+            init(os.getcwd(), args.ioc)
         except Exception as why:
             print('Error: {}'.format(why))
+    elif args.command == 'toolchain':
+        if args.toolchain_command == 'list':
+            print('list')
     else:
         print("Command not implemented")
         return 1
@@ -64,7 +75,7 @@ def main():
     return 0
 
 
-def init(path):
+def init(path, ioc):
     """Create a new project in current working dir"""
     # Abort if there already is a manifest file
     if find_manifest_file(path):
@@ -101,8 +112,30 @@ def init(path):
             author='{} <{}>'.format(name.strip(), email.strip()),
         ))
 
+    os.mkdir(os.path.join(path, 'src'))
+    os.mkdir(os.path.join(path, 'db'))
+    if ioc:
+        os.mkdir(os.path.join(path, 'startup'))
+        stcmd_template = pkg_resources.resource_string(__name__, "resources/templates/st.cmd")
+        with open(os.path.join(path, 'startup', 'st.cmd'), 'w') as stcmd:
+            stcmd.write(stcmd_template)
+    else:
+        libname = os.path.basename(path)
+        src_template = pkg_resources.resource_string(__name__, "resources/templates/library.c")
+        with open(os.path.join(path, 'src', '{}.c'.format(libname)), 'w') as libfile:
+            libfile.write(Template(src_template).substitute(
+                name=libname,
+            ))
 
-def new(path):
+        db_template = pkg_resources.resource_string(__name__, "resources/templates/library.template")
+        with open(os.path.join(path, 'db', '{}.db'.format(libname)), 'w') as dbfile:
+            dbfile.write(Template(db_template).substitute(
+                name=libname,
+            ))
+
+
+
+def new(path, ioc):
     """Create new project in path"""
     # Abort on wrong input, we accept A-Z, a-z, dash '-' and underscore '_'
     if re.search(r'[^A-Za-z0-9\-_]', path):
@@ -117,7 +150,7 @@ def new(path):
     os.mkdir(path)
 
     # Initialize project in created directory
-    init(fullpath)
+    init(fullpath, ioc)
 
 def build():
     """Build project"""
