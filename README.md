@@ -27,7 +27,7 @@ sudo easy_install-3.4 pip
 sed -i 's|$PATH:$HOME/.local/bin:$HOME/bin|$HOME/.local/bin:$HOME/bin:$PATH|' $HOME/.bash_profile
 ```
 
-## With PIP for a single user (\$HOME/.local/bin)
+## With PIP for a single user (~/.local/bin)
 
 ```bash
 pip3 install --user git+https://github.com/NickeZ/epm.git
