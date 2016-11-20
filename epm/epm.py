@@ -47,10 +47,10 @@ def main():
     args = parser.parse_args(sys.argv[1:])
 
     if args.command == 'new':
-        #try:
+        try:
             new(args.path, args.ioc)
-        #except Exception as why:
-            #print('Error: {}'.format(why))
+        except Exception as why:
+            print('Error: {}'.format(why))
     elif args.command == 'build':
         try:
             build()
