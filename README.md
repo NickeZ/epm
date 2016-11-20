@@ -14,22 +14,26 @@ EPM is compatible with both python >=2.7 and >=3.4
 
 ```bash
 sudo apt install python3-pip git
+echo 'PATH="$HOME/.local/bin:$PATH"' >> $HOME/.profile
+source $HOME/.profile
 ```
 
-## With PIP in your home directory
+### CentOS 7
+
+```bash
+sudo yum install epel-release git
+sudo yum install python34-setuptools
+sudo easy_install-3.4 pip
+sed -i 's|$PATH:$HOME/.local/bin:$HOME/bin|$HOME/.local/bin:$HOME/bin:$PATH|' $HOME/.bash_profile
+```
+
+## With PIP for a single user (\$HOME/.local/bin)
 
 ```bash
 pip3 install --user git+https://github.com/NickeZ/epm.git
 ```
 
-Add the PIP bin dir to your bashrc:
-
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
-source $HOME/.bashrc
-```
-
-## With PIP system wide
+## With PIP system wide (/usr/local/bin)
 
 ```bash
 sudo pip3 install git+https://github.com/NickeZ/epm.git
