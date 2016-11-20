@@ -12,7 +12,7 @@ import getpass
 from string import Template
 import pkg_resources
 
-from .util import git_version, find_manifest_file
+from .util import git_version, find_manifest_file, get_epics_host_arch
 from .constants import MANIFEST_FILE, LOCK_FILE
 
 #pylint: disable=broad-except
@@ -160,6 +160,8 @@ def build():
     """Build project"""
     manifestfile = find_manifest_file(os.getcwd())
     if manifestfile:
+        cur_env = os.environ.copy()
+        cur_env["EPICS_HOST_ARCH"] = get_epics_host_arch()
         projectdir = os.path.dirname(manifestfile)
         subprocess.call('cd {}; make'.format(projectdir), shell=True)
     else:

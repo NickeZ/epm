@@ -1,0 +1,2 @@
+# $linuxos
+include $$(CONFIG)/os/CONFIG_SITE.Common.$genericlinux

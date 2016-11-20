@@ -1,0 +1,6 @@
+# $linuxos
+include $$(CONFIG)/os/CONFIG.Common.$genericlinux
+
+COMMANDLINE_LIBRARY = READLINE
+
+PYTHONHOME = /usr

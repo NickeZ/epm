@@ -13,7 +13,8 @@ setup(
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     package_data={
-        'epm': ['resources/templates/*']
+        'epm': ['resources/templates/*'],
+        'tools': ['resources/*']
     },
     entry_points={
         'console_scripts': [
