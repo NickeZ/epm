@@ -72,6 +72,11 @@ def create_template(target, resource, substitutions=None):
         __name__,
         resource,
     ).decode('utf-8')
+
+    # Don't create file if it exists
+    if os.path.isfile(target):
+        return
+
     # Write template
     with open(target, 'wb') as target_file:
         target_file.write(
@@ -98,9 +103,13 @@ def init(path, ioc):
             'resources/templates/gitignore',
         )
 
-    # Generate Makefile
+    # Generate Makefile (GNUmakefile if Makefile exists)
+    makefile = 'Makefile'
+    if os.path.isfile(os.path.join(path, 'Makefile')):
+        makefile = 'GNUmakefile'
+
     create_template(
-        os.path.join(path, 'Makefile'),
+        os.path.join(path, makefile),
         'resources/templates/Makefile'
     )
 
