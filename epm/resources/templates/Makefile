@@ -1,1 +1,1 @@
-include ${EPICS_ENV_PATH}/module.Makefile
+include $${EPICS_ENV_PATH}/module.Makefile

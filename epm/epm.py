@@ -46,34 +46,37 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
-    if args.command == 'new':
-        try:
+    try:
+        if args.command == 'new':
             new(args.path, args.ioc)
-        except Exception as why:
-            print('Error: {}'.format(why))
-    elif args.command == 'build':
-        try:
+        elif args.command == 'build':
             build()
-        except Exception as why:
-            print('Error: {}'.format(why))
-    elif args.command == 'clean':
-        try:
+        elif args.command == 'clean':
             clean()
-        except Exception as why:
-            print('Error: {}'.format(why))
-    elif args.command == 'init':
-        try:
+        elif args.command == 'init':
             init(os.getcwd(), args.ioc)
-        except Exception as why:
-            print('Error: {}'.format(why))
-    elif args.command == 'toolchain':
-        if args.toolchain_command == 'list':
-            print('list')
-    else:
-        print("Command not implemented")
+        elif args.command == 'toolchain':
+            if args.toolchain_command == 'list':
+                print('list')
+        else:
+            print("Command not implemented")
         return 1
-
+    except Exception as why:
+        print('Error: {}'.format(why))
     return 0
+
+def create_template(target, resource, substitutions=None):
+    """Generate a template with substitutions from a resource"""
+    # Get resource
+    tmpl_in = pkg_resources.resource_string(
+        __name__,
+        resource,
+    ).decode('utf-8')
+    # Write template
+    with open(target, 'wb') as target_file:
+        target_file.write(
+            Template(tmpl_in).substitute(substitutions).encode('utf-8')
+        )
 
 
 def init(path, ioc):
@@ -90,53 +93,60 @@ def init(path, ioc):
 
     # Generate git ignore file
     if git_version():
-        ignorefile_template = pkg_resources.resource_string(__name__,
-                                                            "resources/templates/gitignore")
-        with open(os.path.join(path, '.gitignore'), 'wb') as ignorefile:
-            ignorefile.write(ignorefile_template)
+        create_template(
+            os.path.join(path, '.gitignore'),
+            'resources/templates/gitignore',
+        )
 
     # Generate Makefile
-    makefile_template = pkg_resources.resource_string(__name__, "resources/templates/Makefile")
-    with open(os.path.join(path, 'Makefile'), 'wb') as makefile:
-        makefile.write(makefile_template)
+    create_template(
+        os.path.join(path, 'Makefile'),
+        'resources/templates/Makefile'
+    )
 
     # Generate manifestfile
-    epm_template = pkg_resources.resource_string(__name__, "resources/templates/Epm.toml").decode('utf-8')
     name = getpass.getuser()
-    email = '{}@{}'.format(name, "localhost")
+    email = u'{}@{}'.format(name, "localhost")
     if git_version():
         try:
-            name = subprocess.check_output(shlex.split('git config user.name')).decode('utf-8').strip()
-            email = subprocess.check_output(shlex.split('git config user.email')).decode('utf-8').strip()
+            name = subprocess.check_output(
+                shlex.split('git config user.name')
+            ).decode('utf-8').strip()
+            email = subprocess.check_output(
+                shlex.split('git config user.email')
+            ).decode('utf-8').strip()
         except subprocess.CalledProcessError:
             raise Exception('Git is installed but not configured, username or email missing')
-    with open(os.path.join(path, MANIFEST_FILE), 'wb') as manifestfile:
-        manifestfile.write(Template(epm_template).substitute(
-            name=os.path.basename(path),
-            author='{} <{}>'.format(name, email),
-        ).encode('utf-8'))
+    create_template(
+        os.path.join(path, MANIFEST_FILE),
+        "resources/templates/Epm.toml",
+        {
+            'name': os.path.basename(path),
+            'author': '{} <{}>'.format(name, email)
+        }
+    )
 
     os.mkdir(os.path.join(path, 'src'))
     os.mkdir(os.path.join(path, 'db'))
     if ioc:
         os.mkdir(os.path.join(path, 'startup'))
-        stcmd_template = pkg_resources.resource_string(__name__, "resources/templates/st.cmd")
-        with open(os.path.join(path, 'startup', 'st.cmd'), 'wb') as stcmd:
-            stcmd.write(stcmd_template)
+        create_template(
+            os.path.join(path, 'startup', 'st.cmd'),
+            "resources/templates/st.cmd"
+        )
     else:
         libname = os.path.basename(path)
-        src_template = pkg_resources.resource_string(__name__, "resources/templates/library.c").decode('utf-8')
-        with open(os.path.join(path, 'src', '{}.c'.format(libname)), 'wb') as libfile:
-            libfile.write(Template(src_template).substitute(
-                name=libname,
-            ).encode('utf-8'))
+        create_template(
+            os.path.join(path, 'src', '{}.c'.format(libname)),
+            "resources/templates/library.c",
+            {'name': libname}
+        )
 
-        db_template = pkg_resources.resource_string(__name__, "resources/templates/library.template").decode('utf-8')
-        with open(os.path.join(path, 'db', '{}.db'.format(libname)), 'wb') as dbfile:
-            dbfile.write(Template(db_template).substitute(
-                name=libname,
-            ).encode('utf-8'))
-
+        create_template(
+            os.path.join(path, 'db', '{}.db'.format(libname)),
+            "resources/templates/library.template",
+            {'name': libname}
+        )
 
 
 def new(path, ioc):
