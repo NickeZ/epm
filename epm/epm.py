@@ -7,6 +7,7 @@ import re
 import subprocess
 import shlex
 import getpass
+#import pprint
 
 from string import Template
 import pkg_resources
@@ -46,10 +47,10 @@ def main():
     args = parser.parse_args(sys.argv[1:])
 
     if args.command == 'new':
-        try:
+        #try:
             new(args.path, args.ioc)
-        except Exception as why:
-            print('Error: {}'.format(why))
+        #except Exception as why:
+            #print('Error: {}'.format(why))
     elif args.command == 'build':
         try:
             build()
@@ -91,47 +92,47 @@ def init(path, ioc):
     if git_version():
         ignorefile_template = pkg_resources.resource_string(__name__,
                                                             "resources/templates/gitignore")
-        with open(os.path.join(path, '.gitignore'), 'w') as ignorefile:
+        with open(os.path.join(path, '.gitignore'), 'wb') as ignorefile:
             ignorefile.write(ignorefile_template)
 
     # Generate Makefile
     makefile_template = pkg_resources.resource_string(__name__, "resources/templates/Makefile")
-    with open(os.path.join(path, 'Makefile'), 'w') as makefile:
+    with open(os.path.join(path, 'Makefile'), 'wb') as makefile:
         makefile.write(makefile_template)
 
     # Generate manifestfile
-    epm_template = pkg_resources.resource_string(__name__, "resources/templates/Epm.toml")
+    epm_template = pkg_resources.resource_string(__name__, "resources/templates/Epm.toml").decode('utf-8')
     name = getpass.getuser()
     email = '{}@{}'.format(name, "localhost")
     if git_version():
-        name = subprocess.check_output(shlex.split('git config user.name'))
-        email = subprocess.check_output(shlex.split('git config user.email'))
-    with open(os.path.join(path, MANIFEST_FILE), 'w') as manifestfile:
+        name = subprocess.check_output(shlex.split('git config user.name')).decode('utf-8').strip()
+        email = subprocess.check_output(shlex.split('git config user.email')).decode('utf-8').strip()
+    with open(os.path.join(path, MANIFEST_FILE), 'wb') as manifestfile:
         manifestfile.write(Template(epm_template).substitute(
             name=os.path.basename(path),
-            author='{} <{}>'.format(name.strip(), email.strip()),
-        ))
+            author='{} <{}>'.format(name, email),
+        ).encode('utf-8'))
 
     os.mkdir(os.path.join(path, 'src'))
     os.mkdir(os.path.join(path, 'db'))
     if ioc:
         os.mkdir(os.path.join(path, 'startup'))
         stcmd_template = pkg_resources.resource_string(__name__, "resources/templates/st.cmd")
-        with open(os.path.join(path, 'startup', 'st.cmd'), 'w') as stcmd:
+        with open(os.path.join(path, 'startup', 'st.cmd'), 'wb') as stcmd:
             stcmd.write(stcmd_template)
     else:
         libname = os.path.basename(path)
-        src_template = pkg_resources.resource_string(__name__, "resources/templates/library.c")
-        with open(os.path.join(path, 'src', '{}.c'.format(libname)), 'w') as libfile:
+        src_template = pkg_resources.resource_string(__name__, "resources/templates/library.c").decode('utf-8')
+        with open(os.path.join(path, 'src', '{}.c'.format(libname)), 'wb') as libfile:
             libfile.write(Template(src_template).substitute(
                 name=libname,
-            ))
+            ).encode('utf-8'))
 
-        db_template = pkg_resources.resource_string(__name__, "resources/templates/library.template")
-        with open(os.path.join(path, 'db', '{}.db'.format(libname)), 'w') as dbfile:
+        db_template = pkg_resources.resource_string(__name__, "resources/templates/library.template").decode('utf-8')
+        with open(os.path.join(path, 'db', '{}.db'.format(libname)), 'wb') as dbfile:
             dbfile.write(Template(db_template).substitute(
                 name=libname,
-            ))
+            ).encode('utf-8'))
 
 
 

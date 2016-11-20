@@ -22,7 +22,6 @@ def memoize(function):
 def git_version():
     """Returns git version if git is installed, None if git isn't installed"""
     null = open(os.devnull, 'w')
-    subprocess.call(shlex.split('echo call>>/tmp/niklas'))
     try:
         version = subprocess.check_output(shlex.split('git --version'), stderr=null)
         return version.split()
