@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='epm',
-    version='0.0.1',
+    version='0.1.0',
     description='EPM',
     long_description='EPM',
     url='https://github.com/NickeZ/epm',
