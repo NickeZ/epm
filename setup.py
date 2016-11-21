@@ -16,6 +16,9 @@ setup(
         'epm': ['resources/templates/*'],
         'tools': ['resources/*']
     },
+    install_requires=[
+        'toml',
+    ],
     entry_points={
         'console_scripts': [
             'epm=epm.epm:main',
