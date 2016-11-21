@@ -9,9 +9,17 @@ import pkg_resources
 CONFIG_FILES = [
     'CONFIG.Common.{0}',
     'CONFIG.{0}.Common',
-    'CONFIG.{0}.{0}',
+    'CONFIG.{0}.{0}']
+
+CONFIG_FILES_DEBUG = CONFIG_FILES + [
+    'CONFIG_SITE.{0}.{0}']
+
+CONFIG_FILES_HOST = CONFIG_FILES + [
     'CONFIG_SITE.Common.{0}',
     'CONFIG_SITE.{0}.Common']
+
+CONFIG_FILES_CROSS = [
+    'CONFIG.{0}.{1}']
 
 def main():
     """Main function"""
@@ -21,18 +29,58 @@ def main():
 
     generic_epics_arch = '{}-{}'.format(platform.system().lower(), platform.machine())
 
-    for config in CONFIG_FILES:
+    generate_files(
+        args.os,
+        generic_epics_arch,
+        CONFIG_FILES_HOST
+    )
+    generate_files(
+        '{}-debug'.format(args.os),
+        '{}-debug'.format(generic_epics_arch),
+        CONFIG_FILES_DEBUG
+    )
+    generate_files_cross(
+        args.os,
+        '{}-debug'.format(args.os),
+        generic_epics_arch,
+        '{}-debug'.format(generic_epics_arch),
+        CONFIG_FILES_CROSS
+    )
+
+def generate_files(epics_arch, generic_epics_arch, config_files):
+    """Generate epics_arch with includes of generic_epics_arch"""
+    for config in config_files:
         tmpl_filename = config.format('linuxos')
         tmpl_in = pkg_resources.resource_string(
             __name__,
             'resources/{}'.format(tmpl_filename)
         ).decode('utf-8')
 
-        config_filename = config.format(args.os)
+        config_filename = config.format(epics_arch)
         with open(config_filename, 'wb') as outfile:
             outfile.write(Template(tmpl_in).substitute(
-                linuxos=args.os,
+                linuxos=epics_arch,
                 genericlinux=generic_epics_arch,
+                generictarget=generic_epics_arch,
+                ).encode('utf-8'))
+
+def generate_files_cross(epics_arch, target_arch, generic_epics_arch, generic_target_arch,
+                         config_files):
+    """Generate epics_arch with includes of generic_epics_arch"""
+    for config in config_files:
+        tmpl_filename = config.format('linuxos', 'linuxos')
+        tmpl_in = pkg_resources.resource_string(
+            __name__,
+            'resources/{}'.format(tmpl_filename)
+        ).decode('utf-8')
+
+        config_filename = config.format(epics_arch, target_arch)
+        with open(config_filename, 'wb') as outfile:
+            outfile.write(Template(tmpl_in).substitute(
+                linuxos=epics_arch,
+                targetos=target_arch,
+                genericlinux=generic_epics_arch,
+                generictarget=generic_target_arch,
                 ).encode('utf-8'))
 
 if __name__ == '__main__':
