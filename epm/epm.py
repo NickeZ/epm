@@ -225,12 +225,66 @@ def new(path, ioc):
 def build(path):
     """Build project"""
     (epicsv, hostarch) = get_epics_version_and_host_arch()
+    verify_prerequisites(hostarch)
     verify_toolchain(epicsv, hostarch)
     if path:
         project = os.path.basename(path)
         epics_compile(project, path, hostarch)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
+
+REQUIRED_APPS = [
+    'gcc',
+    'xsubpp',
+    'podchecker',
+]
+REQUIRED_DEVS = [
+    '/usr/include/boost',
+    '/usr/include/readline/readline.h',
+]
+
+SATISFIES = {
+    'centos7': {
+        'gcc': 'Development tools',
+        'xsubpp': 'perl-ExtUtils-ParseXs',
+        'podchecker': 'perl-Pod-Checker',
+        '/usr/include/boost': 'boost-devel',
+        '/usr/include/readline/readline.h': 'readline-devel',
+    },
+    'ubuntu1604': {
+        'gcc': 'build-essentials',
+        'xsubpp': 'perl-dev',
+        'podchecker': 'perl',
+        '/usr/include/boost': 'boost-dev',
+        '/usr/include/readline/readline.h': 'readline-dev',
+    },
+}
+
+def verify_prerequisites(hostarch):
+    """Look for all prerequisites on system"""
+    missing = set()
+    for app in REQUIRED_APPS:
+        try:
+            subprocess.check_output('which {}'.format(app), shell=True, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            missing.add(app)
+    for header in REQUIRED_DEVS:
+        if not os.path.isfile(header):
+            missing.add(header)
+
+    if not missing:
+        return
+
+    if 'centos7' in hostarch:
+        pretty_eprint('Error', 'Please run `sudo yum install {}`'.format(
+            ' '.join([SATISFIES['centos7'][x] for x in missing])))
+        raise Exception('Missing dependencies')
+    elif 'ubuntu1604' in hostarch:
+        pretty_eprint(
+            'Error',
+            'Please do `sudo apt install {}`'.format(
+                ' '.join([SATISFIES['ubuntu1604'][x] for x in missing])))
+        raise Exception('Missing dependencies')
 
 def verify_toolchain(epicsversion, hostarch):
     """Checks if we have the toolchain, otherwise downloads and compiles"""
