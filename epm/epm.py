@@ -125,6 +125,11 @@ def create_template(target, resource, substitutions=None):
 
 def init(path, ioc):
     """Create a new project in current working dir"""
+    init_priv(path, ioc)
+    pretty_print('Created', 'EPICS project')
+
+def init_priv(path, ioc):
+    """Create a new project in path"""
     # Abort if there already is a manifest file
     if find_manifest_file(path):
         raise ValueError('Already in an EPM project')
@@ -213,6 +218,8 @@ def new(path, ioc):
 
     # Initialize project in created directory
     init(fullpath, ioc)
+
+    pretty_print('Created', 'EPICS project "{}"'.format(path))
 
 def build(path):
     """Build project"""
