@@ -245,18 +245,20 @@ REQUIRED_DEVS = [
 
 SATISFIES = {
     'centos7': {
-        'gcc': 'Development tools',
+        'gcc': 'gcc',
+        'c++': 'gcc-c++',
         'xsubpp': 'perl-ExtUtils-ParseXs',
         'podchecker': 'perl-Pod-Checker',
         '/usr/include/boost': 'boost-devel',
         '/usr/include/readline/readline.h': 'readline-devel',
     },
     'ubuntu1604': {
-        'gcc': 'build-essentials',
-        'xsubpp': 'perl-dev',
+        'gcc': 'gcc',
+        'c++': 'g++',
+        'xsubpp': 'libextutils-xspp-perl',
         'podchecker': 'perl',
-        '/usr/include/boost': 'boost-dev',
-        '/usr/include/readline/readline.h': 'readline-dev',
+        '/usr/include/boost': 'libboost-dev',
+        '/usr/include/readline/readline.h': 'libreadline-dev',
     },
 }
 
@@ -269,7 +271,7 @@ def verify_prerequisites(hostarch):
         except subprocess.CalledProcessError:
             missing.add(app)
     for header in REQUIRED_DEVS:
-        if not os.path.isfile(header):
+        if not os.path.exists(header):
             missing.add(header)
 
     if not missing:
