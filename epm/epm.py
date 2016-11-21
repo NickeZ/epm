@@ -136,9 +136,10 @@ def init_priv(path, ioc):
 
     # Initialize git repository
     if not os.path.isdir(os.path.join(path, '.git')) and git_version():
-        status = subprocess.call('cd {}; git init'.format(path), shell=True)
-        if status:
-            raise Exception('Failed to run git init')
+        try:
+            subprocess.check_output('cd {}; git init'.format(path), shell=True)
+        except subprocess.CalledProcessError as why:
+            raise Exception('Failed to run git init: {}'.format(why))
 
     # Generate git ignore file
     if git_version():
