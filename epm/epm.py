@@ -11,13 +11,18 @@ import getpass
 
 from string import Template
 import pkg_resources
+import toml
 
 from .util import git_version, find_manifest_file, get_epics_host_arch
 from .constants import MANIFEST_FILE, LOCK_FILE
 
-#pylint: disable=broad-except
+#pylint: disable=invalid-name
+settings = {}
+
 def main():
+    #pylint: disable=broad-except, global-statement
     """Main function"""
+    global settings
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
     p_new = subparsers.add_parser('new', help='Create a new project')
@@ -46,6 +51,13 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
+    configfile = os.path.expanduser("~/.epm/config.toml")
+    if os.path.isfile(configfile):
+        with open(configfile) as tomlfile:
+            settings = toml.loads(tomlfile.read())
+    else:
+        generate_default_config()
+
     try:
         if args.command == 'new':
             new(args.path, args.ioc)
@@ -64,6 +76,12 @@ def main():
     except Exception as why:
         print('Error: {}'.format(why))
     return 0
+
+def generate_default_config():
+    """Generates the defaul config file"""
+    #pylint: disable=global-statement
+    global settings
+    settings = {'default_host_triple': '3.14.12.5-centos7-x86_64'}
 
 def create_template(target, resource, substitutions=None):
     """Generate a template with substitutions from a resource"""
@@ -177,6 +195,7 @@ def new(path, ioc):
 
 def build():
     """Build project"""
+    get_default_host_tripe()
     manifestfile = find_manifest_file(os.getcwd())
     if manifestfile:
         cur_env = os.environ.copy()
@@ -185,6 +204,10 @@ def build():
         subprocess.call('cd {}; make'.format(projectdir), shell=True)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
+
+def get_default_host_tripe():
+    """Get the defualt compiler"""
+    print(settings['default_host_triple'])
 
 def clean():
     """Clean up project"""
