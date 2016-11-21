@@ -248,7 +248,7 @@ SATISFIES = {
     'centos7': {
         'gcc': 'gcc',
         'c++': 'gcc-c++',
-        'xsubpp': 'perl-ExtUtils-ParseXs',
+        'xsubpp': 'perl-ExtUtils-ParseXS',
         'podchecker': 'perl-Pod-Checker',
         '/usr/include/boost': 'boost-devel',
         '/usr/include/readline/readline.h': 'readline-devel',
