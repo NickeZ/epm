@@ -288,6 +288,8 @@ def verify_prerequisites(hostarch):
             'Please do `sudo apt install {}`'.format(
                 ' '.join([SATISFIES['ubuntu1604'][x] for x in missing])))
         raise Exception('Missing dependencies')
+    else:
+        pretty_eprint('Warning', 'Unknown platform, could not check dependencies')
 
 def verify_toolchain(epicsversion, hostarch):
     """Checks if we have the toolchain, otherwise downloads and compiles"""
