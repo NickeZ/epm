@@ -13,6 +13,8 @@ from string import Template
 import pkg_resources
 import toml
 
+# Ignore unused imports while developing
+# pylint: disable=unused-import
 from .util import git_version, find_manifest_file, get_epics_host_arch
 from .constants import MANIFEST_FILE, LOCK_FILE
 
@@ -20,9 +22,8 @@ from .constants import MANIFEST_FILE, LOCK_FILE
 settings = {}
 
 def main():
-    #pylint: disable=broad-except, global-statement
+    #pylint: disable=broad-except
     """Main function"""
-    global settings
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
     p_new = subparsers.add_parser('new', help='Create a new project')
@@ -51,12 +52,7 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
-    configfile = os.path.expanduser("~/.epm/config.toml")
-    if os.path.isfile(configfile):
-        with open(configfile) as tomlfile:
-            settings = toml.loads(tomlfile.read())
-    else:
-        generate_default_config()
+    read_settings_file()
 
     try:
         if args.command == 'new':
@@ -77,11 +73,28 @@ def main():
         print('Error: {}'.format(why))
     return 0
 
-def generate_default_config():
-    """Generates the defaul config file"""
+def read_settings_file():
+    """Reads the settings file"""
     #pylint: disable=global-statement
     global settings
-    settings = {'default_host_triple': '3.14.12.5-centos7-x86_64'}
+    configfile = os.path.expanduser("~/.epm/config.toml")
+    if os.path.isfile(configfile):
+        with open(configfile) as tomlfile:
+            settings = toml.loads(tomlfile.read())
+    else:
+        generate_default_config()
+
+
+def generate_default_config():
+    """Generates the default config file"""
+    #pylint: disable=global-statement
+    global settings
+    settings = {'default-host-triple': '3.14.12.5-centos7-x86_64'}
+    configfile = os.path.expanduser("~/.epm/config.toml")
+    if not os.path.isdir(os.path.dirname(configfile)):
+        os.mkdir(os.path.dirname(configfile))
+    with open(configfile, 'wb') as tomlfile:
+        tomlfile.write(toml.dumps(settings).encode('utf-8'))
 
 def create_template(target, resource, substitutions=None):
     """Generate a template with substitutions from a resource"""
@@ -195,19 +208,20 @@ def new(path, ioc):
 
 def build():
     """Build project"""
-    get_default_host_tripe()
+    (epicsv, hostarch) = get_epics_version_and_host_arch()
+    print((epicsv, hostarch))
     manifestfile = find_manifest_file(os.getcwd())
     if manifestfile:
         cur_env = os.environ.copy()
-        cur_env["EPICS_HOST_ARCH"] = get_epics_host_arch()
+        cur_env["EPICS_HOST_ARCH"] = hostarch
         projectdir = os.path.dirname(manifestfile)
-        subprocess.call('cd {}; make'.format(projectdir), shell=True)
+        subprocess.call('cd {}; make build.{}'.format(projectdir, epicsv), shell=True)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
 
-def get_default_host_tripe():
-    """Get the defualt compiler"""
-    print(settings['default_host_triple'])
+def get_epics_version_and_host_arch():
+    """Get the default compiler"""
+    return settings['default-host-triple'].split('-', 1)
 
 def clean():
     """Clean up project"""
