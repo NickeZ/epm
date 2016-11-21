@@ -235,6 +235,7 @@ def build(path):
 
 REQUIRED_APPS = [
     'gcc',
+    'c++',
     'xsubpp',
     'podchecker',
 ]
