@@ -46,6 +46,7 @@ def find_manifest_file(path):
 
 def get_epics_host_arch():
     """Try to figure out the host architecture."""
+    #pylint: disable=deprecated-method
     (dist, version, _) = platform.linux_distribution()
     dist = dist.lower()
     if dist:
@@ -53,6 +54,16 @@ def get_epics_host_arch():
             return 'centos{}-{}'.format(version[0], platform.machine())
         elif 'scientific linux' in dist:
             return 'SL{}-{}'.format(version[0], platform.machine())
-        elif dist in ('ubuntu', 'debian'):
+        elif 'ubuntu' in dist:
+            return '{}{}-{}'.format(dist, version.replace('.', ''), platform.machine())
+        elif 'debian' in dist:
             return '{}{}-{}'.format(dist, version[0], platform.machine())
     return '{}-{}'.format(platform.system().lower(), platform.machine())
+
+def pretty_print(action, message):
+    """Prints a line a little bit prettier"""
+    print('\x1b[1m{:>12}\x1b[0m {}'.format(action, message))
+
+def pretty_eprint(action, message):
+    """Prints a line a little bit prettier"""
+    print('\x1b[1;31m{}: \x1b[0m {}'.format(action, message))

@@ -7,6 +7,9 @@ import re
 import subprocess
 import shlex
 import getpass
+import urllib.request
+import shutil
+import multiprocessing
 #import pprint
 
 from string import Template
@@ -15,8 +18,8 @@ import toml
 
 # Ignore unused imports while developing
 # pylint: disable=unused-import
-from .util import git_version, find_manifest_file, get_epics_host_arch
-from .constants import MANIFEST_FILE, LOCK_FILE
+from .util import git_version, find_manifest_file, get_epics_host_arch, pretty_print, pretty_eprint
+from .constants import MANIFEST_FILE, LOCK_FILE, EPM_DIR, CACHE_DIR, EPM_SERVER
 
 #pylint: disable=invalid-name
 settings = {}
@@ -54,13 +57,18 @@ def main():
 
     read_settings_file()
 
+    manifestfile = find_manifest_file(os.getcwd())
+    projectdir = None
+    if manifestfile:
+        projectdir = os.path.dirname(manifestfile)
+
     try:
         if args.command == 'new':
             new(args.path, args.ioc)
         elif args.command == 'build':
-            build()
+            build(projectdir)
         elif args.command == 'clean':
-            clean()
+            clean(projectdir)
         elif args.command == 'init':
             init(os.getcwd(), args.ioc)
         elif args.command == 'toolchain':
@@ -70,7 +78,7 @@ def main():
             print("Command not implemented")
         return 1
     except Exception as why:
-        print('Error: {}'.format(why))
+        pretty_eprint('Error', '{}'.format(why))
     return 0
 
 def read_settings_file():
@@ -89,7 +97,7 @@ def generate_default_config():
     """Generates the default config file"""
     #pylint: disable=global-statement
     global settings
-    settings = {'default-host-triple': '3.14.12.5-centos7-x86_64'}
+    settings = {'default-host-triple': '3.15.4-{}'.format(get_epics_host_arch())}
     configfile = os.path.expanduser("~/.epm/config.toml")
     if not os.path.isdir(os.path.dirname(configfile)):
         os.mkdir(os.path.dirname(configfile))
@@ -206,28 +214,69 @@ def new(path, ioc):
     # Initialize project in created directory
     init(fullpath, ioc)
 
-def build():
+def build(path):
     """Build project"""
     (epicsv, hostarch) = get_epics_version_and_host_arch()
-    print((epicsv, hostarch))
-    manifestfile = find_manifest_file(os.getcwd())
-    if manifestfile:
-        cur_env = os.environ.copy()
-        cur_env["EPICS_HOST_ARCH"] = hostarch
-        projectdir = os.path.dirname(manifestfile)
-        subprocess.call('cd {}; make build.{}'.format(projectdir, epicsv), shell=True)
+    verify_toolchain(epicsv, hostarch)
+    if path:
+        project = os.path.basename(path)
+        epics_compile(project, path, hostarch)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
+
+def verify_toolchain(epicsversion, hostarch):
+    """Checks if we have the toolchain, otherwise downloads and compiles"""
+    toolchains_dir = os.path.join(EPM_DIR, 'toolchains')
+    if not os.path.isdir(toolchains_dir):
+        os.mkdir(toolchains_dir)
+    toolchain_dir = os.path.join(toolchains_dir, 'base-{}-{}'.format(epicsversion, hostarch))
+    if not os.path.isdir(toolchain_dir):
+        os.mkdir(toolchain_dir)
+        archive = 'base-{}.tar.gz'.format(epicsversion)
+        target = '{}-{}.tar.gz'.format(epicsversion, hostarch)
+        base_name = 'EPICS Base {}'.format(epicsversion)
+        target_name = 'Toolchain {}'.format(hostarch)
+        fetch(base_name, archive)
+        fetch(target_name, target)
+        unpack(base_name, archive, toolchain_dir)
+        unpack(target_name, target, toolchain_dir)
+        epics_compile('{}-{}'.format(base_name, hostarch), toolchain_dir, hostarch)
+
+def fetch(name, archive):
+    """Fetch archive from http server"""
+    pretty_print('Downloading', name)
+    if not os.path.isdir(CACHE_DIR):
+        os.mkdir(CACHE_DIR)
+    (local_filename, headers) = urllib.request.urlretrieve('{}/{}'.format(EPM_SERVER, archive))
+    shutil.copy(local_filename, os.path.join(CACHE_DIR, archive))
+
+def unpack(name, archive, target):
+    """Unpack archive"""
+    pretty_print('Unpacking', name)
+    subprocess.check_output('tar --extract --file {} -C {}'.format(
+        os.path.join(CACHE_DIR, archive),
+        target
+    ), shell=True)
+
+def epics_compile(name, path, hostarch):
+    """Compile with EPICS_HOST_ARCH"""
+    pretty_print('Compiling', name)
+    cur_env = os.environ.copy()
+    cur_env["EPICS_HOST_ARCH"] = hostarch
+    cores = multiprocessing.cpu_count() + 1
+    subprocess.check_output('cd {}; make -j{}'.format(path, cores),
+                            env=cur_env,
+                            shell=True,
+                            stderr=subprocess.STDOUT)
 
 def get_epics_version_and_host_arch():
     """Get the default compiler"""
     return settings['default-host-triple'].split('-', 1)
 
-def clean():
+def clean(path):
     """Clean up project"""
-    manifestfile = find_manifest_file(os.getcwd())
-    if manifestfile:
-        projectdir = os.path.dirname(manifestfile)
-        subprocess.call('cd {}; make clean'.format(projectdir), shell=True)
+    pretty_print('Cleaning', os.path.basename(path))
+    if path:
+        subprocess.call('cd {}; make clean'.format(path), shell=True)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
