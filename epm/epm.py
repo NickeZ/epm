@@ -217,7 +217,7 @@ def new(path, ioc):
     os.mkdir(path)
 
     # Initialize project in created directory
-    init(fullpath, ioc)
+    init_priv(fullpath, ioc)
 
     pretty_print('Created', 'EPICS project "{}"'.format(path))
 
