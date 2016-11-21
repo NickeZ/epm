@@ -310,9 +310,9 @@ def verify_toolchain(epicsversion, hostarch):
 def fetch(name, archive):
     """Fetch archive from http server"""
     pretty_print('Downloading', name)
+    (local_filename, headers) = urllib.request.urlretrieve('{}/{}'.format(EPM_SERVER, archive))
     if not os.path.isdir(CACHE_DIR):
         os.mkdir(CACHE_DIR)
-    (local_filename, headers) = urllib.request.urlretrieve('{}/{}'.format(EPM_SERVER, archive))
     shutil.copy(local_filename, os.path.join(CACHE_DIR, archive))
 
 def unpack(name, archive, target):
