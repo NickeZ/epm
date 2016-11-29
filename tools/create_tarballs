@@ -1,8 +1,62 @@
 #!/bin/bash
 set -e
 
-OSS="centos6-x86_64 centos7-x86_64 ubuntu1404-x86_64 ubuntu1604-x86_64"
+# Reference links
+# https://www.aps.anl.gov/epics/download/base/baseR3.14.12.tar.gz
+# https://www.aps.anl.gov/epics/download/base/base-3.15.4.tar.gz
+#
+# All unpacks to base-X.Y.Z
 
-for os in ${OSS}; do
-	./generate_linux_host_arch.py "${os}"
-done
+BASES="R3.14.12 R3.14.12.1 R3.14.12.2 R3.14.12.3 R3.14.12.4 R3.14.12.5  -3.15.1 -3.15.2 -3.15.3 -3.15.4"
+OSS="centos6-x86_64 centos7-x86_64 ubuntu1404-x86_64 ubuntu1604-x86_64"
+CACHEDIR=${HOME}/.cache/epm
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+pushd() {
+	command pushd "$@" > /dev/null
+}
+
+popd() {
+	command popd "$@" > /dev/null
+}
+
+create_base_tarball() {
+	local base tmpdir base_norm
+
+	# Download tarball if needed
+	base=$1
+	pushd ${CACHEDIR}
+	if [[ ! -f base${base}.tar.gz ]]; then
+		wget https://www.aps.anl.gov/epics/download/base/base${base}.tar.gz
+	fi
+	popd
+
+	# Extract downloaded tarball
+	tmpdir=$(mktemp -d)
+	pushd ${tmpdir}
+	tar xf ${CACHEDIR}/base${base}.tar.gz
+	popd
+
+	# Normalize base name (from RX.Y.Z and -X.Y.Z to X.Y.Z
+	base_norm=base-${base:1}
+
+	# Create new tarball
+	rm ${base_norm}.tar.gz
+	tar cf ${base_norm}.tar.gz -C ${tmpdir}/${base_norm} .
+}
+
+main() {
+	mkdir -p ${CACHEDIR}
+
+	for base in ${BASES}; do
+		echo "Creating Base ${base}"
+		create_base_tarball ${base}
+	done
+
+	for os in ${OSS}; do
+		echo "Creating OS ${os}"
+		${SCRIPTDIR}/generate_linux_host_arch.py "${os}"
+	done
+}
+
+main "$@"
