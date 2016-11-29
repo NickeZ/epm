@@ -2,6 +2,7 @@
 """Helper program to generate os specific epics host architectures"""
 import argparse
 import os
+import shutil
 import sys
 import platform
 import subprocess
@@ -61,7 +62,8 @@ def main():
         '{}-debug'.format(generic_epics_arch),
         CONFIG_FILES_CROSS
     )
-    subprocess.call('tar cf {}.tar.gz configure -C {}'.format(args.os, tmpdir), shell=True)
+    subprocess.call('tar cf {}.tar.gz -C {} configure'.format(args.os, tmpdir), shell=True)
+    shutil.rmtree(tmpdir)
 
 def generate_files(osdir, epics_arch, generic_epics_arch, config_files):
     """Generate epics_arch with includes of generic_epics_arch"""
