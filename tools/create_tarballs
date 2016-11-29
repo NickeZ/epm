@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+OSS="centos6-x86_64 centos7-x86_64 ubuntu1404-x86_64 ubuntu1604-x86_64"
+
+for os in ${OSS}; do
+	./generate_linux_host_arch.py "${os}"
+done
