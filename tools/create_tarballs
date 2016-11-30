@@ -41,7 +41,7 @@ create_base_tarball() {
 	base_norm=base-${base:1}
 
 	# Create new tarball
-	rm ${base_norm}.tar.gz
+	rm -f ${base_norm}.tar.gz
 	tar cf ${base_norm}.tar.gz -C ${tmpdir}/${base_norm} .
 }
 
