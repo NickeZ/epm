@@ -21,7 +21,7 @@ popd() {
 }
 
 create_base_tarball() {
-	local base tmpdir base_norm
+	local base tmpdir base_name
 
 	# Download tarball if needed
 	base=$1
@@ -37,25 +37,26 @@ create_base_tarball() {
 	tar xf ${CACHEDIR}/base${base}.tar.gz
 	popd
 
-	# Normalize base name (from RX.Y.Z and -X.Y.Z to X.Y.Z
-	base_norm=base-${base:1}
-
 	# Create new tarball
-	rm -f ${base_norm}.tar.gz
-	tar cf ${base_norm}.tar.gz -C ${tmpdir}/${base_norm} .
+	base_name=$2
+	rm -f ${base_name}.tar.gz
+	tar cf ${base_name}.tar.gz -C ${tmpdir}/${base_name} .
 }
 
 main() {
+	local base_norm
 	mkdir -p ${CACHEDIR}
 
 	for base in ${BASES}; do
 		echo "Creating Base ${base}"
-		create_base_tarball ${base}
-	done
+		# Normalize base name (from RX.Y.Z and -X.Y.Z to X.Y.Z)
+		base_norm=${base:1}
+		create_base_tarball ${base} base-${base_norm}
 
-	for os in ${OSS}; do
-		echo "Creating OS ${os}"
-		${SCRIPTDIR}/generate_linux_host_arch.py "${os}"
+		for os in ${OSS}; do
+			echo "Creating OS ${os}"
+			${SCRIPTDIR}/generate_linux_host_arch.py "${os}" "${base_norm}"
+		done
 	done
 }
 

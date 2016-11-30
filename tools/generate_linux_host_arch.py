@@ -31,6 +31,7 @@ def main():
     """Main function"""
     parser = argparse.ArgumentParser()
     parser.add_argument('os')
+    parser.add_argument('base')
     args = parser.parse_args(sys.argv[1:])
 
     generic_epics_arch = '{}-{}'.format(platform.system().lower(), platform.machine())
@@ -62,7 +63,7 @@ def main():
         '{}-debug'.format(generic_epics_arch),
         CONFIG_FILES_CROSS
     )
-    subprocess.call('tar cf {}.tar.gz -C {} configure'.format(args.os, tmpdir), shell=True)
+    subprocess.call('tar cf {}-{}.tar.gz -C {} configure'.format(args.base, args.os, tmpdir), shell=True)
     shutil.rmtree(tmpdir)
 
 def generate_files(osdir, epics_arch, generic_epics_arch, config_files):
