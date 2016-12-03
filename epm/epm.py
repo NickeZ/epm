@@ -35,8 +35,8 @@ except NameError:
     basestring = str
 
 def main():
-    #pylint: disable=broad-except
     """Main function"""
+    #pylint: disable=broad-except
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
     p_new = subparsers.add_parser('new', help='Create a new project')
@@ -251,6 +251,7 @@ def build(path):
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
 
 def load_epm_index():
+    """Load the EPM index of modules"""
     return json.loads("""[
             {"name": "asyn", "vers": "4.21.0", "compat":"minor", "deps": []},
             {"name": "asyn", "vers": "4.23.0", "compat":"minor", "deps": []},
