@@ -11,10 +11,14 @@ import urllib.request
 import shutil
 import multiprocessing
 #import pprint
+import json
 
 from string import Template
 import pkg_resources
+
+# External deps
 import toml
+import semver
 
 # Ignore unused imports while developing
 # pylint: disable=unused-import
@@ -23,6 +27,12 @@ from .constants import MANIFEST_FILE, LOCK_FILE, EPM_DIR, CACHE_DIR, EPM_SERVER
 
 #pylint: disable=invalid-name
 settings = {}
+
+#python2 compat
+try:
+    basestring
+except NameError:
+    basestring = str
 
 def main():
     #pylint: disable=broad-except
@@ -225,13 +235,48 @@ def new(path, ioc):
 def build(path):
     """Build project"""
     (epicsv, hostarch) = get_epics_version_and_host_arch()
-    verify_prerequisites(hostarch)
-    verify_toolchain(epicsv, hostarch)
+    check_system_prerequisites(hostarch)
+    check_toolchain(epicsv, hostarch)
+    epm_index = load_epm_index()
+    project_conf = load_project_config(path)
+    if 'dependencies' in project_conf.keys():
+        deps = project_conf['dependencies']
+    else:
+        deps = {}
+    check_dependencies(deps, epm_index)
     if path:
         project = os.path.basename(path)
         epics_compile(project, path, hostarch)
     else:
         raise Exception('Could not find {}'.format(MANIFEST_FILE))
+
+def load_epm_index():
+    return json.loads("""[
+            {"name": "asyn", "vers": "4.21.0", "compat":"minor", "deps": []},
+            {"name": "asyn", "vers": "4.23.0", "compat":"minor", "deps": []},
+            {"name": "asyn", "vers": "4.27.0", "compat":"minor", "deps": []}
+            ]""")
+
+def load_project_config(path):
+    """Opens project manifest file and returns configuration"""
+    with open(os.path.join(path, MANIFEST_FILE), 'r') as manifest:
+        return toml.loads(manifest.read())
+
+def check_dependencies(deps, index):
+    """Installs all dependencies"""
+    for (dependency, version) in deps.items():
+        if isinstance(version, dict):
+            print('{} complex'.format(dependency))
+        if isinstance(version, basestring):
+            if "*" in version:
+                print('{} wildcard'.format(dependency))
+            elif "~" in version:
+                print('{} tilde'.format(dependency))
+            elif "^" in version:
+                print('{} caret'.format(dependency))
+            else:
+                print(semver.parse(version))
+                print('{} simple'.format(dependency))
 
 REQUIRED_APPS = [
     'gcc',
@@ -263,7 +308,7 @@ SATISFIES = {
     },
 }
 
-def verify_prerequisites(hostarch):
+def check_system_prerequisites(hostarch):
     """Look for all prerequisites on system"""
     missing = set()
     for app in REQUIRED_APPS:
@@ -291,7 +336,7 @@ def verify_prerequisites(hostarch):
     else:
         pretty_eprint('Warning', 'Unknown platform, could not check dependencies')
 
-def verify_toolchain(epicsversion, hostarch):
+def check_toolchain(epicsversion, hostarch):
     """Checks if we have the toolchain, otherwise downloads and compiles"""
     toolchains_dir = os.path.join(EPM_DIR, 'toolchains')
     if not os.path.isdir(toolchains_dir):

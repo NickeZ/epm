@@ -18,6 +18,7 @@ setup(
     },
     install_requires=[
         'toml',
+        'semver',
     ],
     entry_points={
         'console_scripts': [
