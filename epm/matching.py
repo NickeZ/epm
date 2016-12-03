@@ -156,8 +156,95 @@ def test_tilde_match():
     assert tilde_match(semver.parse_version_info("1.2.3"), "~1")
     assert not tilde_match(semver.parse_version_info("2.0.0"), "~1")
 
+def compat_match_generator(compat):
+    """Generate a compat_match function with a specific compat"""
+    return lambda x, y: compat_match(x, y, compat)
+
+def compat_match(version, matcher, compat='minor'):
+    """Match with wildcard in version"""
+    #pylint: disable=too-many-branches,too-many-return-statements
+    version_info = matcher.strip('~').split(".")
+
+    if len(version_info) == 3:
+        if version_info[0].isdigit() and version_info[1].isdigit() and version_info[2].isdigit():
+            if compat == 'major':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), int(version_info[2]))
+                )
+            elif compat == 'minor':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), int(version_info[2])) and
+                    version < (int(version_info[0])+1, 0, 0)
+                )
+            elif compat == 'patch':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), int(version_info[2])) and
+                    version < (int(version_info[0]), int(version_info[1])+1, 0)
+                )
+        else:
+            raise Exception("Failed to parse matcher")
+    elif len(version_info) == 2:
+        if version_info[0].isdigit() and version_info[1].isdigit():
+            if compat == 'major':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), 0)
+                )
+            elif compat == 'minor':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), 0) and
+                    version < (int(version_info[0])+1, 0, 0)
+                )
+            elif compat == 'patch':
+                return (
+                    version >= (int(version_info[0]), int(version_info[1]), 0) and
+                    version < (int(version_info[0]), int(version_info[1])+1, 0)
+                )
+        else:
+            raise Exception("Failed to parse matcher")
+    elif len(version_info) == 1:
+        if version_info[0].isdigit():
+            if compat == 'major':
+                return (
+                    version >= (int(version_info[0]), 0, 0)
+                )
+            elif compat == 'minor':
+                return (
+                    version >= (int(version_info[0]), 0, 0) and
+                    version < (int(version_info[0])+1, 0, 0)
+                )
+            elif compat == 'patch':
+                return (
+                    version >= (int(version_info[0]), 0, 0) and
+                    version < (int(version_info[0]), 1, 0)
+                )
+        else:
+            raise Exception("Failed to parse matcher")
+    else:
+        raise Exception("Failed to parse matcher")
+
+def test_compat_match():
+    """Test of compat matcher"""
+    assert compat_match(semver.parse_version_info("1.2.3"), "1.2.3")
+    assert compat_match(semver.parse_version_info("1.2.4"), "1.2.3")
+    assert compat_match(semver.parse_version_info("1.3.3"), "1.2.3")
+    assert not compat_match(semver.parse_version_info("1.2.2"), "1.2.3")
+
+    assert not compat_match(semver.parse_version_info("1.3.3"), "1.2.3", 'patch')
+
+    assert compat_match(semver.parse_version_info("1.2.3"), "1.2")
+    assert compat_match(semver.parse_version_info("1.3.0"), "1.2")
+    assert not compat_match(semver.parse_version_info("2.0.0"), "1.2")
+
+    assert compat_match(semver.parse_version_info("1.2.3"), "1")
+    assert not compat_match(semver.parse_version_info("2.0.0"), "1")
+
+    assert compat_match(semver.parse_version_info("1.0.3"), "1", 'patch')
+    assert not compat_match(semver.parse_version_info("1.2.3"), "1", 'patch')
+
+    assert compat_match(semver.parse_version_info("5.0.0"), "1", 'major')
 
 if __name__ == "__main__":
     test_wilcard_match()
     test_caret_match()
     test_tilde_match()
+    test_compat_match()

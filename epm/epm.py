@@ -24,7 +24,7 @@ import semver
 # pylint: disable=unused-import
 from .util import git_version, find_manifest_file, get_epics_host_arch, pretty_print, pretty_eprint
 from .constants import MANIFEST_FILE, LOCK_FILE, EPM_DIR, CACHE_DIR, EPM_SERVER
-from .matching import wildcard_match, caret_match, tilde_match
+from .matching import wildcard_match, caret_match, tilde_match, compat_match, compat_match_generator
 
 #pylint: disable=invalid-name
 settings = {}
@@ -254,14 +254,14 @@ def build(path):
 def load_epm_index():
     """Load the EPM index of modules"""
     return json.loads("""[
-            {"name": "asyn", "vers": "4.21.0", "compat":"minor", "deps": []},
-            {"name": "asyn", "vers": "4.23.0", "compat":"minor", "deps": []},
-            {"name": "asyn", "vers": "4.27.0", "compat":"minor", "deps": []},
-            {"name": "andor", "vers": "2.20.0", "compat":"patch", "deps": []},
-            {"name": "andor", "vers": "2.21.3", "compat":"patch", "deps": []},
-            {"name": "andor", "vers": "2.21.5", "compat":"patch", "deps": []},
-            {"name": "andor", "vers": "2.21.8", "compat":"patch", "deps": []},
-            {"name": "andor", "vers": "2.22.0", "compat":"patch", "deps": []}
+            {"name": "asyn", "vers": "4.21.0", "compat":"patch", "deps": []},
+            {"name": "asyn", "vers": "4.23.0", "compat":"patch", "deps": []},
+            {"name": "asyn", "vers": "4.27.0", "compat":"patch", "deps": []},
+            {"name": "andor", "vers": "2.20.0", "compat":"minor", "deps": []},
+            {"name": "andor", "vers": "2.21.3", "compat":"minor", "deps": []},
+            {"name": "andor", "vers": "2.21.5", "compat":"minor", "deps": []},
+            {"name": "andor", "vers": "2.21.8", "compat":"minor", "deps": []},
+            {"name": "andor", "vers": "2.22.0", "compat":"minor", "deps": []}
             ]""")
 
 def load_project_config(path):
@@ -285,9 +285,18 @@ def check_dependencies(deps, index):
                 print('{} caret'.format(dependency))
                 version = find_latest_version(dependency, index, required, caret_match)
             else:
-                print('{} simple'.format(dependency))
-                version = semver.parse_version_info(required)
+                print('{} compatability'.format(dependency))
+                version = find_latest_version_compat(dependency, index, required)
             pretty_print('Installing', '{} {}.{}.{}'.format(dependency, version.major, version.minor, version.patch))
+
+def find_latest_version_compat(name, index, matcher):
+    """Find the latest version of index using compat_match"""
+    for entry in reversed(index):
+        if entry['name'] == name:
+            version = semver.parse_version_info(entry['vers'])
+            if compat_match(version, matcher, entry['compat']):
+                return version
+    raise Exception("Dependency not found in index")
 
 def find_latest_version(name, index, matcher, matcher_fun):
     """Find the latest version of index using matcher_fun"""
