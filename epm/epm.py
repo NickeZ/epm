@@ -24,6 +24,7 @@ import semver
 # pylint: disable=unused-import
 from .util import git_version, find_manifest_file, get_epics_host_arch, pretty_print, pretty_eprint
 from .constants import MANIFEST_FILE, LOCK_FILE, EPM_DIR, CACHE_DIR, EPM_SERVER
+from .matching import wildcard_match, caret_match, tilde_match
 
 #pylint: disable=invalid-name
 settings = {}
@@ -36,7 +37,7 @@ except NameError:
 
 def main():
     """Main function"""
-    #pylint: disable=broad-except
+    #pylint: disable=broad-except,too-many-locals
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='commands', dest='command')
     p_new = subparsers.add_parser('new', help='Create a new project')
@@ -255,7 +256,12 @@ def load_epm_index():
     return json.loads("""[
             {"name": "asyn", "vers": "4.21.0", "compat":"minor", "deps": []},
             {"name": "asyn", "vers": "4.23.0", "compat":"minor", "deps": []},
-            {"name": "asyn", "vers": "4.27.0", "compat":"minor", "deps": []}
+            {"name": "asyn", "vers": "4.27.0", "compat":"minor", "deps": []},
+            {"name": "andor", "vers": "2.20.0", "compat":"patch", "deps": []},
+            {"name": "andor", "vers": "2.21.3", "compat":"patch", "deps": []},
+            {"name": "andor", "vers": "2.21.5", "compat":"patch", "deps": []},
+            {"name": "andor", "vers": "2.21.8", "compat":"patch", "deps": []},
+            {"name": "andor", "vers": "2.22.0", "compat":"patch", "deps": []}
             ]""")
 
 def load_project_config(path):
@@ -265,19 +271,32 @@ def load_project_config(path):
 
 def check_dependencies(deps, index):
     """Installs all dependencies"""
-    for (dependency, version) in deps.items():
-        if isinstance(version, dict):
+    for (dependency, required) in deps.items():
+        if isinstance(required, dict):
             print('{} complex'.format(dependency))
-        if isinstance(version, basestring):
-            if "*" in version:
+        if isinstance(required, basestring):
+            if "*" in required:
                 print('{} wildcard'.format(dependency))
-            elif "~" in version:
+                version = find_latest_version(dependency, index, required, wildcard_match)
+            elif "~" in required:
                 print('{} tilde'.format(dependency))
-            elif "^" in version:
+                version = find_latest_version(dependency, index, required, tilde_match)
+            elif "^" in required:
                 print('{} caret'.format(dependency))
+                version = find_latest_version(dependency, index, required, caret_match)
             else:
-                print(semver.parse(version))
                 print('{} simple'.format(dependency))
+                version = semver.parse_version_info(required)
+            pretty_print('Installing', '{} {}.{}.{}'.format(dependency, version.major, version.minor, version.patch))
+
+def find_latest_version(name, index, matcher, matcher_fun):
+    """Find the latest version of index using matcher_fun"""
+    for entry in reversed(index):
+        if entry['name'] == name:
+            version = semver.parse_version_info(entry['vers'])
+            if matcher_fun(version, matcher):
+                return version
+    raise Exception("Dependency not found in index")
 
 REQUIRED_APPS = [
     'gcc',
