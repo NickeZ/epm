@@ -100,6 +100,7 @@ def main():
         settings = generate_default_config()
     if not settings:
         pretty_eprint('Error', 'Failed to generate config file')
+        sys.exit(1)
 
     # Find a manifest file in this folder or any parent folder
     manifestfile = find_manifest_file(os.getcwd())

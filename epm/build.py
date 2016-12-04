@@ -6,7 +6,6 @@ from .constants import MANIFEST_FILE
 from .util import load_project_config, epics_compile
 from .system_deps import check_system_prerequisites
 from .toolchain import check_toolchain
-from .index import load_epm_index
 
 def build(settings, path):
     """Build project"""
@@ -23,7 +22,6 @@ def build(settings, path):
 
 def check_dependencies():
     """Check deps"""
-    epm_index = load_epm_index()
     #Look in lockfile
     #check if deps are installed
     #otherwise install from index
