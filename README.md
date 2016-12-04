@@ -2,7 +2,7 @@
 
 EPM helps you compile and maintain your epics installation.
 
-# Install
+# Install with PIP
 
 It is recommended to install EPM with PIP.
 
@@ -11,6 +11,12 @@ It is recommended to install EPM with PIP.
 EPM is compatible with both python >=2.7 and >=3.4
 
 ### Ubuntu 16.04
+
+```bash
+sudo apt install python3-pip
+```
+
+### Ubuntu 14.04
 
 ```bash
 sudo apt install python3-pip git
@@ -37,6 +43,24 @@ pip3 install --user git+https://github.com/NickeZ/epm.git
 
 ```bash
 sudo pip3 install git+https://github.com/NickeZ/epm.git
+```
+
+# Install without PIP
+
+## Ubuntu 14.04
+
+```bash
+sudo apt-get install git python3-setuptools
+echo 'PATH="$HOME/.local/bin:$PATH"' >> $HOME/.profile
+source $HOME/.profile
+easy_install3 --user git+https://github.com/NickeZ/epm.git
+```
+
+## Ubuntu 16.04
+
+```bash
+sudo apt-get install python3-setuptools
+easy_install3 --user git+https://github.com/NickeZ/epm.git
 ```
 
 # Usage
