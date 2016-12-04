@@ -9,6 +9,7 @@ REQUIRED_APPS = [
     'c++',
     'xsubpp',
     'podchecker',
+    'make',
 ]
 REQUIRED_DEVS = [
     '/usr/include/boost',
@@ -17,6 +18,7 @@ REQUIRED_DEVS = [
 
 SATISFIES = {
     'centos7': {
+        'make': 'make',
         'gcc': 'gcc',
         'c++': 'gcc-c++',
         'xsubpp': 'perl-ExtUtils-ParseXS',
@@ -24,7 +26,17 @@ SATISFIES = {
         '/usr/include/boost': 'boost-devel',
         '/usr/include/readline/readline.h': 'readline-devel',
     },
+    'ubuntu1404': {
+        'make': 'make',
+        'gcc': 'gcc',
+        'c++': 'g++',
+        'xsubpp': 'libextutils-xspp-perl',
+        'podchecker': 'perl',
+        '/usr/include/boost': 'libboost-dev',
+        '/usr/include/readline/readline.h': 'libreadline-dev',
+    },
     'ubuntu1604': {
+        'make': 'make',
         'gcc': 'gcc',
         'c++': 'g++',
         'xsubpp': 'libextutils-xspp-perl',
@@ -53,11 +65,11 @@ def check_system_prerequisites(hostarch):
         pretty_eprint('Error', 'Please run `sudo yum install {}`'.format(
             ' '.join([SATISFIES['centos7'][x] for x in missing])))
         raise Exception('Missing dependencies')
-    elif 'ubuntu1604' in hostarch:
+    elif 'ubuntu' in hostarch:
         pretty_eprint(
             'Error',
             'Please do `sudo apt install {}`'.format(
-                ' '.join([SATISFIES['ubuntu1604'][x] for x in missing])))
+                ' '.join([SATISFIES[hostarch.split('-')[0]][x] for x in missing])))
         raise Exception('Missing dependencies')
     else:
         pretty_eprint('Warning', 'Unknown platform, could not check dependencies')

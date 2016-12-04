@@ -27,5 +27,6 @@ def check_dependencies():
     #otherwise install from index
 
 def get_epics_version_and_host_arch(settings):
-    """Get the default compiler"""
+    """Get the default compiler.
+    Returns toolchain without base, ubuntu1604-x86_64 for example"""
     return settings['default-host-triple'].split('-', 1)
