@@ -20,8 +20,16 @@ from .system_deps import check_system_prerequisites
 def main():
     """Main function"""
     #pylint: disable=broad-except,too-many-locals,too-many-branches,too-many-statements
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(title='commands', dest='command')
+    parser = argparse.ArgumentParser(
+        description='An EPICS Package Manager',
+        epilog="See 'epm help <command>' for more information...",
+    )
+
+    subparsers = parser.add_subparsers(
+        title='commands',
+        dest='command',
+        metavar='command',
+    )
 
     p_new = subparsers.add_parser(
         'new',
@@ -60,6 +68,11 @@ def main():
     )
     p_update.add_argument('--verbose')
 
+    p_publish = subparsers.add_parser(
+        'publish',
+        help='Package and upload module'
+    )
+
     p_install = subparsers.add_parser(
         'install',
         help='Install module'
@@ -89,6 +102,10 @@ def main():
     )
 
     args = parser.parse_args(sys.argv[1:])
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
 
     # Read the config file from user home directory. Create if needed
     try:

@@ -1,5 +1,6 @@
 """Utilites used by EPM"""
 import os
+import sys
 import subprocess
 import multiprocessing
 import shlex
@@ -100,8 +101,19 @@ def epics_compile(name, path, hostarch):
     pretty_print('Compiling', name)
     cur_env = os.environ.copy()
     cur_env["EPICS_HOST_ARCH"] = hostarch
+    #TODO(nc) fix the following hack:
+    cur_env["EPICS_BASE"] = os.path.expanduser('~/.epm/toolchains/base-3.15.4-ubuntu1604-x86_64')
+    #cur_env["EPICS_MODULES_DIR"] = os.expanduser('~/.epm/'
     cores = multiprocessing.cpu_count() + 1
-    subprocess.check_output('cd {}; make -j{}'.format(path, cores),
-                            env=cur_env,
-                            shell=True,
-                            stderr=subprocess.STDOUT)
+    cppflags = '-Wall'
+    try:
+        output = subprocess.check_output(
+            'make -j{} EPICSVERSION="{}" PROJECT="{}" CMD_CPPFLAGS="{}" '.format(cores, '3.15.4', name, cppflags),
+            env=cur_env,
+            shell=True,
+            stderr=subprocess.STDOUT,
+            cwd=path,
+        )
+        sys.stdout.write(output.decode('utf-8'))
+    except subprocess.CalledProcessError as err:
+        sys.stdout.write(err.output.decode('utf-8'))
