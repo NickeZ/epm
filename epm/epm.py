@@ -16,6 +16,7 @@ from .build import build
 from .update import update
 from .clean import clean
 from .system_deps import check_system_prerequisites
+from .publish import publish
 
 def main():
     """Main function"""
@@ -147,6 +148,11 @@ def main():
         elif args.command == 'update':
             if projectdir:
                 update(projectdir)
+            else:
+                pretty_eprint('Error', 'Failed to find project directory')
+        elif args.command == 'publish':
+            if projectdir:
+                publish(projectdir)
             else:
                 pretty_eprint('Error', 'Failed to find project directory')
         else:
