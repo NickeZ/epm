@@ -16,7 +16,6 @@ def publish(path):
         'LC_ALL=C tar \
         --create \
         --exclude=target \
-        --exclude=".[^/]*" \
         --exclude-backups \
         --exclude-vcs \
         --sort=name \
