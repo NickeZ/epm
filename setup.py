@@ -19,6 +19,7 @@ setup(
     install_requires=[
         'toml',
         'semver',
+        'siphash',
     ],
     entry_points={
         'console_scripts': [

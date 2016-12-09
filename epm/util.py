@@ -78,7 +78,14 @@ def pretty_eprint(action, message):
 def load_project_config(path):
     """Opens project manifest file and returns configuration"""
     with open(os.path.join(path, MANIFEST_FILE), 'r') as manifest:
-        return toml.loads(manifest.read())
+        config = toml.loads(manifest.read())
+    if 'project' not in config:
+        raise Exception("Could not find project section in config")
+    if 'name' not in config['project']:
+        raise Exception("Could not find name in config")
+    if 'version' not in config['project']:
+        raise Exception("Could not find version in config")
+    return config
 
 def fetch(name, archive):
     """Fetch archive from http server"""

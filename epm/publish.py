@@ -2,16 +2,20 @@
 import tempfile
 import subprocess
 import os
-import hashlib
+import siphash
+import requests
 
-from .util import pretty_print
+from .util import pretty_print, load_project_config
+from .constants import SIPHASH_KEY, EPM_SERVER
 
 def publish(path):
     """Publish"""
-    name = os.path.basename(path)
+    config = load_project_config(path)
+    name = config['project']['name']
+    version = config['project']['version']
     pretty_print('Packing', name)
     tmpdir = tempfile.mkdtemp()
-    archivename = os.path.join(tmpdir, 'project.tar.gz')
+    archivename = os.path.join(tmpdir, '{}-{}.tar.gz'.format(name, version))
     subprocess.call(
         'LC_ALL=C tar \
         --create \
@@ -25,11 +29,12 @@ def publish(path):
         * | gzip --no-name > {}'.format(archivename),
         shell=True,
     )
-    print('Will upload the following files:')
-    subprocess.call('tar --list --file {}'.format(archivename), shell=True)
-    # Calculate hash like git does it
+    #print('Will upload the following files:')
+    #subprocess.call('tar --list --file {}'.format(archivename), shell=True)
     with open(archivename, 'rb') as archive:
-        #filesize = os.path.getsize(archivename)
-        #chksum = hashlib.sha1(b'blob {}' + str(filesize).encode('utf-8') + b'\0' + archive.read())
-        chksum = hashlib.sha1(archive.read())
-    print('Checksum: {}'.format(chksum.hexdigest()))
+        chksum = siphash.SipHash_2_4(SIPHASH_KEY, archive.read()).hexdigest()
+
+    files = {'project': open(archivename, 'rb')}
+    requests.put('{}/api/v1/packages/new'.format(EPM_SERVER), files=files)
+    print('Filename: {}'.format(archivename))
+    print('Checksum: {}'.format(chksum))
