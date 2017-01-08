@@ -1,16 +1,14 @@
 """Clean"""
-import subprocess
 import os
+import shutil
 
 from .util import pretty_print, pretty_eprint
-from .constants import MANIFEST_FILE
+from .constants import BUILDDIR
 
 def clean(path):
     """Clean up project"""
     pretty_print('Cleaning', os.path.basename(path))
-    if path:
-        status = subprocess.call('cd {}; make clean'.format(path), shell=True)
-        if status != 0:
-            pretty_eprint('Error', 'Failed to clean up project')
-    else:
-        raise Exception('Could not find {}'.format(MANIFEST_FILE))
+    try:
+        shutil.rmtree(os.path.join(path, BUILDDIR))
+    except OSError:
+        pretty_eprint('Error', 'Failed to clean up project')

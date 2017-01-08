@@ -7,11 +7,13 @@ import shlex
 import shutil
 import platform
 import urllib.request
+import cgi
 
 #External deps
 import toml
+import siphash
 
-from .constants import MANIFEST_FILE, CACHE_DIR, EPM_SERVER
+from .constants import MANIFEST_FILE, CACHE_DIR, EPM_SERVER, SIPHASH_KEY, EPMAPI
 
 def memoize(function):
     """Decorator that caches function calls"""
@@ -87,6 +89,15 @@ def load_project_config(path):
         raise Exception("Could not find version in config")
     return config
 
+def apifetch(name, get):
+    """Fetch archive from the API"""
+    pretty_print('Downloading', name)
+    (local_filename, headers) = urllib.request.urlretrieve('{}/{}'.format(EPMAPI, get))
+    (dispvalue, dispdict) = cgi.parse_header(headers['Content-Disposition'])
+    if not os.path.isdir(CACHE_DIR):
+        os.mkdir(CACHE_DIR)
+    shutil.copy(local_filename, os.path.join(CACHE_DIR, dispdict['filename']))
+
 def fetch(name, archive):
     """Fetch archive from http server"""
     pretty_print('Downloading', name)
@@ -95,9 +106,19 @@ def fetch(name, archive):
         os.mkdir(CACHE_DIR)
     shutil.copy(local_filename, os.path.join(CACHE_DIR, archive))
 
+def verify(archive, chksum_in):
+    """Verify that it is the correct file"""
+    archivepath = os.path.join(CACHE_DIR, archive)
+    with open(archivepath, 'rb') as archivefile:
+        chksum = siphash.SipHash_2_4(SIPHASH_KEY, archivefile.read()).hexdigest()
+        return chksum == chksum_in
+    return False
+
 def unpack(name, archive, target):
     """Unpack archive"""
     pretty_print('Unpacking', name)
+    if not os.path.isdir(target):
+        os.makedirs(target)
     subprocess.check_output('tar --extract --file {} -C {}'.format(
         os.path.join(CACHE_DIR, archive),
         target

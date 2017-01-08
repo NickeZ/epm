@@ -4,7 +4,7 @@
 import semver
 
 from .matching import wildcard_match, caret_match, tilde_match, compat_match
-from .index import get_index_entries
+from .index import get_entries
 from .util import load_project_config, pretty_print
 
 #python2 compat
@@ -33,7 +33,7 @@ def update(path):
         if isinstance(required, dict):
             print('{} complex'.format(dependency))
         if isinstance(required, basestring):
-            index_entries = get_index_entries(dependency)
+            index_entries = get_entries(dependency)
             if "*" in required:
                 print('{} wildcard'.format(dependency))
                 version = find_latest_version(dependency, index_entries, required, wildcard_match)
